@@ -115,7 +115,8 @@ export default function Sidebar({
         className={`
                     fixed inset-y-0 left-0 z-40 flex flex-col
                     transition-all duration-500 ease-in-out
-                    ${collapsed ? "w-18" : "w-64"}
+                    // ${collapsed ? "w-18" : "w-64"}
+                    ${collapsed ? "w-22" : "w-64"}
                     ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
                     ${
                       isDark
@@ -214,94 +215,92 @@ export default function Sidebar({
               <div className="space-y-1">
                 {group.items.map((item) => {
                   const Icon = item.icon;
-                  const isActive = window.location.pathname === item.path;
                   const isHovered = hoveredItem === item.path;
 
                   return (
                     <NavLink
                       key={item.path}
                       to={item.path}
+                      end={item.path === "/system/dashboard"}
                       onClick={() => setMobileOpen(false)}
                       onMouseEnter={() => setHoveredItem(item.path)}
                       onMouseLeave={() => setHoveredItem(null)}
-                      className={({ isActive: active }) =>
-                        `
-                                                    group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
-                                                    transition-all duration-300 ease-in-out
-                                                    ${collapsed ? "justify-center" : ""}
-                                                    ${
-                                                      active
-                                                        ? isDark
-                                                          ? "bg-blue-600/20 text-blue-400 shadow-lg shadow-blue-500/10"
-                                                          : "bg-blue-50 text-blue-600 shadow-lg shadow-blue-500/10"
-                                                        : isDark
-                                                          ? "text-slate-300 hover:bg-slate-800/80 hover:text-white"
-                                                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                                                    }
-                                                    ${isHovered && !collapsed ? "scale-[1.02]" : ""}
-                                                    ${isHovered && collapsed ? "scale-[1.05]" : ""}
-                                                `
+                      className={({ isActive }) =>
+                        [
+                          "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 ease-in-out",
+                          collapsed ? "justify-center" : "",
+                          isActive
+                            ? isDark
+                              ? "bg-blue-600/20 text-blue-400 shadow-lg shadow-blue-500/10"
+                              : "bg-blue-50 text-blue-600 shadow-lg shadow-blue-500/10"
+                            : isDark
+                              ? "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                          isHovered && !collapsed ? "scale-[1.02]" : "",
+                          isHovered && collapsed ? "scale-[1.05]" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")
                       }
                     >
-                      <div
-                        className={`
-                                                relative flex items-center justify-center transition-transform duration-300
-                                                ${collapsed ? "w-full" : ""}
-                                            `}
-                      >
-                        <Icon className={`h-5 w-5 shrink-0 transition-all duration-300 ${isActive ? "scale-110" : ""}${isHovered ? "scale-110" : ""}`}/>
+                      {({ isActive }) => (
+                        <>
+                          <div
+                            className={`relative flex items-center justify-center transition-transform duration-300 ${
+                              collapsed ? "w-full" : ""
+                            }`}
+                          >
+                            <Icon
+                              className={`h-5 w-5 shrink-0 transition-all duration-300 ${
+                                isActive || isHovered ? "scale-110" : ""
+                              }`}
+                            />
 
-                        {/* Active indicator dot for collapsed mode */}
-                        {collapsed && isActive && (
-                          <span className="absolute -right-1 top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50"></span>
-                        )}
-                      </div>
+                            {/* Active dot when collapsed */}
+                            {collapsed && isActive && (
+                              <span className="absolute -right-1 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50" />
+                            )}
+                          </div>
 
-                      <span
-                        className={`
-                      transition-all duration-500 overflow-hidden whitespace-nowrap
-                      ${collapsed ? "opacity-0 w-0 -translate-x-4" : "opacity-100 w-auto translate-x-0"}
-                                                `}
-                      >
-                        {item.label}
-                      </span>
-
-                      {/* Active indicator bar */}
-                      {!collapsed && isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-0.5 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50"></span>
-                      )}
-
-                      {/* Tooltip when collapsed */}
-                      {collapsed && (
-                        <span
-                          className={`
-                                                    absolute left-full ml-3
-                                                    transition-all duration-300
-                                                    ${isHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 pointer-events-none"}
-                                                    whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium
-                                                    ${
-                                                      isDark
-                                                        ? "bg-slate-800 text-white shadow-xl shadow-black/30"
-                                                        : "bg-white text-slate-900 shadow-xl shadow-black/10"
-                                                    }
-                                                    border ${isDark ? "border-slate-700" : "border-slate-200"}
-                                                    z-50
-                                                `}
-                        >
-                          {item.label}
                           <span
-                            className={`
-                                                        absolute top-1/2 -translate-y-1/2 -left-1.5 
-                                                        h-2 w-2 rotate-45
-                                                        ${
-                                                          isDark
-                                                            ? "bg-slate-800 border-slate-700"
-                                                            : "bg-white border-slate-200"
-                                                        }
-                                                        border-l border-b
-                                                    `}
-                          ></span>
-                        </span>
+                            className={`overflow-hidden whitespace-nowrap transition-all duration-500 ${
+                              collapsed
+                                ? "w-0 -translate-x-4 opacity-0"
+                                : "w-auto translate-x-0 opacity-100"
+                            }`}
+                          >
+                            {item.label}
+                          </span>
+
+                          {/* Active bar when expanded */}
+                          {!collapsed && isActive && (
+                            <span className="absolute left-0 top-1/2 h-8 w-0.5 -translate-y-1/2 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50" />
+                          )}
+
+                          {/* Tooltip when collapsed */}
+                          {collapsed && (
+                            <span
+                              className={`absolute left-full z-50 ml-3 whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-300 ${
+                                isHovered
+                                  ? "translate-x-0 opacity-100"
+                                  : "pointer-events-none -translate-x-2 opacity-0"
+                              } ${
+                                isDark
+                                  ? "border-slate-700 bg-slate-800 text-white shadow-xl shadow-black/30"
+                                  : "border-slate-200 bg-white text-slate-900 shadow-xl shadow-black/10"
+                              }`}
+                            >
+                              {item.label}
+                              <span
+                                className={`absolute top-1/2 -left-1.5 h-2 w-2 -translate-y-1/2 rotate-45 border-b border-l ${
+                                  isDark
+                                    ? "border-slate-700 bg-slate-800"
+                                    : "border-slate-200 bg-white"
+                                }`}
+                              />
+                            </span>
+                          )}
+                        </>
                       )}
                     </NavLink>
                   );
@@ -369,13 +368,13 @@ export default function Sidebar({
               <button
                 onClick={() => setThemeMenuOpen(!themeMenuOpen)}
                 className={`
-                                    flex items-center gap-3 w-full rounded-xl px-3 py-2 text-sm transition-all duration-300
-                                    ${
-                                      isDark
-                                        ? "text-slate-300 hover:bg-slate-800"
-                                        : "text-slate-600 hover:bg-slate-100"
-                                    }
-                                `}
+                        flex items-center gap-3 w-full rounded-xl px-3 py-2 text-sm transition-all duration-300
+                        ${
+                          isDark
+                            ? "text-slate-300 hover:bg-slate-800"
+                            : "text-slate-600 hover:bg-slate-100"
+                        }
+                    `}
               >
                 {isDark ? (
                   <MoonIcon className="h-5 w-5" />
@@ -395,13 +394,13 @@ export default function Sidebar({
               {themeMenuOpen && (
                 <div
                   className={`
-                                    absolute bottom-full left-0 mb-1 w-full rounded-xl border shadow-2xl py-1 overflow-hidden
-                                    ${
-                                      isDark
-                                        ? "bg-slate-800 border-slate-700 shadow-black/50"
-                                        : "bg-white border-slate-200 shadow-slate-200/50"
-                                    }
-                                `}
+                              absolute bottom-full left-0 mb-1 w-full rounded-xl border shadow-2xl py-1 overflow-hidden
+                              ${
+                                isDark
+                                  ? "bg-slate-800 border-slate-700 shadow-black/50"
+                                  : "bg-white border-slate-200 shadow-slate-200/50"
+                              }
+                          `}
                 >
                   {[
                     { value: "light", icon: SunIcon, label: "Light" },
@@ -419,17 +418,17 @@ export default function Sidebar({
                         setThemeMenuOpen(false);
                       }}
                       className={`
-                                                flex items-center gap-3 w-full px-3 py-2 text-sm transition-colors duration-200
-                                                ${
-                                                  theme === option.value
-                                                    ? isDark
-                                                      ? "bg-blue-600/20 text-blue-400"
-                                                      : "bg-blue-50 text-blue-600"
-                                                    : isDark
-                                                      ? "text-slate-300 hover:bg-slate-700"
-                                                      : "text-slate-600 hover:bg-slate-50"
-                                                }
-                                            `}
+                                  flex items-center gap-3 w-full px-3 py-2 text-sm transition-colors duration-200
+                                  ${
+                                    theme === option.value
+                                      ? isDark
+                                        ? "bg-blue-600/20 text-blue-400"
+                                        : "bg-blue-50 text-blue-600"
+                                      : isDark
+                                        ? "text-slate-300 hover:bg-slate-700"
+                                        : "text-slate-600 hover:bg-slate-50"
+                                  }
+                              `}
                     >
                       <option.icon className="h-4 w-4" />
                       {option.label}

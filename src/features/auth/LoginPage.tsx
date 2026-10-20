@@ -1,17 +1,26 @@
 import { FormEvent, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import {
+    EyeIcon,
+    EyeSlashIcon,
+    SunIcon,
+    MoonIcon,
+    ComputerDesktopIcon,
+} from "@heroicons/react/24/outline";
+
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { getDefaultRoute } from "../../lib/getDefaultRoute";
+import { Button, Input, Spinner } from "../../components/ui";
+import { cn } from "../../lib/cn";
 
 type LocationState = {
     from?: {
         pathname: string;
     };
-    };
+};
 
-    export function LoginPage() {
+export function LoginPage() {
     const { login, isAuthenticated, loading: authLoading } = useAuth();
     const { theme, setTheme, isDark } = useTheme();
     const navigate = useNavigate();
@@ -25,8 +34,18 @@ type LocationState = {
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
+    // Already logged in → bounce away
     if (!authLoading && isAuthenticated) {
         return <Navigate to={from} replace />;
+    }
+
+    // Still bootstrapping session
+    if (authLoading) {
+        return (
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
+            <Spinner size="lg" className="text-blue-600" />
+        </div>
+        );
     }
 
     async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -58,67 +77,62 @@ type LocationState = {
         }
     }
 
+    const cycleTheme = () => {
+        if (theme === "light") setTheme("dark");
+        else if (theme === "dark") setTheme("system");
+        else setTheme("light");
+    };
+
+    const ThemeIcon =
+        theme === "dark"
+        ? MoonIcon
+        : theme === "light"
+            ? SunIcon
+            : ComputerDesktopIcon;
+
     return (
-        <div
-        className={`min-h-screen flex items-center justify-center px-4 py-8 transition-colors duration-200 ${
-            isDark ? "bg-slate-900" : "bg-slate-50"
-        }`}
+        <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8 transition-colors dark:bg-slate-900">
+        {/* Theme toggle — top right */}
+        <button
+            type="button"
+            onClick={cycleTheme}
+            className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            aria-label={`Theme: ${theme}. Click to cycle.`}
+            title={`Theme: ${theme}`}
         >
+            <ThemeIcon className="h-5 w-5" />
+        </button>
+
         <div className="w-full max-w-md">
             {/* Logo */}
-            <div className="text-center mb-8">
+            <div className="mb-8 text-center">
             <img
                 src="/schoolos2.png"
                 alt="SchoolOS Logo"
-                className="mx-auto h-20 w-20 rounded-lg shadow-md object-cover"
+                className="mx-auto h-20 w-20 rounded-lg object-cover shadow-md"
             />
-            <h1
-                className={`mt-4 text-2xl font-bold transition-colors duration-200 ${
-                isDark ? "text-white" : "text-slate-900"
-                }`}
-            >
+            <h1 className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">
                 SchoolOS
             </h1>
-            <p
-                className={`mt-2 text-sm transition-colors duration-200 ${
-                isDark ? "text-slate-400" : "text-slate-500"
-                }`}
-            >
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                 Sign in to your school account
             </p>
             </div>
 
             {/* Card */}
-            <div
-            className={`rounded-2xl border shadow-md p-6 sm:p-8 transition-colors duration-200 ${
-                isDark
-                ? "bg-slate-800 border-slate-700"
-                : "bg-white border-slate-200"
-            }`}
-            >
-            <h2
-                className={`text-lg font-semibold mb-2 transition-colors duration-200 ${
-                isDark ? "text-white" : "text-slate-900"
-                }`}
-            >
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-md transition-colors dark:border-slate-700 dark:bg-slate-800 sm:p-8">
+            <h2 className="mb-1 text-lg font-semibold text-slate-900 dark:text-white">
                 Welcome back
             </h2>
-            <p
-                className={`text-sm mb-6 transition-colors duration-200 ${
-                isDark ? "text-slate-400" : "text-slate-500"
-                }`}
-            >
+            <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
                 Enter your credentials to continue.
             </p>
 
+            {/* Error alert */}
             {error && (
                 <div
                 role="alert"
-                className={`mb-5 rounded-lg border px-4 py-3 text-sm transition-colors duration-200 ${
-                    isDark
-                    ? "border-red-800 bg-red-900/30 text-red-400"
-                    : "border-red-200 bg-red-50 text-red-700"
-                }`}
+                className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400"
                 >
                 {error}
                 </div>
@@ -126,40 +140,28 @@ type LocationState = {
 
             <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Login ID */}
-                <div>
-                <label
-                    className={`block text-sm font-medium mb-2 transition-colors duration-200 ${
-                    isDark ? "text-slate-300" : "text-slate-700"
-                    }`}
-                >
-                    Login ID
-                </label>
-                <input
-                    id="loginId"
-                    name="login_id"
-                    type="text"
-                    autoComplete="username"
-                    placeholder="e.g. NBS-R8L-2PW"
-                    value={loginId}
-                    onChange={(e) => setLoginId(e.target.value)}
-                    disabled={submitting}
-                    required
-                    className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition disabled:cursor-not-allowed ${
-                    isDark
-                        ? "bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-800"
-                        : "bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-100"
-                    }`}
+                <Input
+                label="Login ID"
+                name="login_id"
+                id="loginId"
+                type="text"
+                autoComplete="username"
+                placeholder="e.g. NBS-R8L-2PW"
+                value={loginId}
+                onChange={(e) => setLoginId(e.target.value)}
+                disabled={submitting}
+                required
+                autoFocus
                 />
-                </div>
 
-                {/* Password with toggle */}
-                <div>
+                {/* Password with visibility toggle */}
+                <div className="w-full">
                 <label
-                    className={`block text-sm font-medium mb-2 transition-colors duration-200 ${
-                    isDark ? "text-slate-300" : "text-slate-700"
-                    }`}
+                    htmlFor="password"
+                    className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
                 >
                     Password
+                    <span className="ml-0.5 text-red-500">*</span>
                 </label>
                 <div className="relative">
                     <input
@@ -171,20 +173,22 @@ type LocationState = {
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={submitting}
                     required
-                    className={`w-full rounded-lg border px-4 py-3 pr-10 text-sm outline-none transition disabled:cursor-not-allowed ${
-                        isDark
-                        ? "bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-800"
-                        : "bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-100"
-                    }`}
+                    className={cn(
+                        "w-full rounded-lg border px-3.5 py-2.5 pr-10 text-sm outline-none transition",
+                        "placeholder:text-slate-400",
+                        "focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
+                        "disabled:cursor-not-allowed disabled:opacity-60",
+                        "border-slate-300 bg-white text-slate-900",
+                        "dark:border-slate-600 dark:bg-slate-800 dark:text-white",
+                        "disabled:bg-slate-100 dark:disabled:bg-slate-900",
+                    )}
                     />
                     <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className={`absolute inset-y-0 right-3 flex items-center transition-colors ${
-                        isDark
-                        ? "text-slate-400 hover:text-slate-300"
-                        : "text-slate-400 hover:text-slate-600"
-                    }`}
+                    onClick={() => setShowPassword((v) => !v)}
+                    tabIndex={-1}
+                    className="absolute inset-y-0 right-3 flex items-center text-slate-400 transition hover:text-slate-600 dark:hover:text-slate-300"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                     {showPassword ? (
                         <EyeSlashIcon className="h-5 w-5" />
@@ -196,37 +200,28 @@ type LocationState = {
                 </div>
 
                 {/* Submit */}
-                <button
+                <Button
                 type="submit"
-                disabled={submitting || !loginId.trim() || !password}
-                className="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                fullWidth
+                size="lg"
+                loading={submitting}
+                disabled={!loginId.trim() || !password}
                 >
-                {submitting ? (
-                    <span className="flex items-center justify-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Signing in...
-                    </span>
-                ) : (
-                    "Sign in"
-                )}
-                </button>
+                {submitting ? "Signing in..." : "Sign in"}
+                </Button>
             </form>
 
             {/* Footer */}
             <div className="mt-6 text-center">
-                <p
-                className={`text-xs transition-colors duration-200 ${
-                    isDark ? "text-slate-500" : "text-slate-400"
-                }`}
-                >
-                Powered By <span className="text-blue-500 font-bold">IGSSAX</span>{" "}
-                <span className="text-green-500 font-bold">TEQ</span>
+                <p className="text-xs text-slate-400 dark:text-slate-500">
+                Powered by <span className="font-bold text-blue-500">IGSSAX</span>{" "}
+                <span className="font-bold text-green-500">TEQ</span>
                 </p>
             </div>
             </div>
         </div>
         </div>
-    );
+    )
 }
 
 export default LoginPage;

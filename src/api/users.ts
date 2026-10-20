@@ -15,6 +15,10 @@ export interface UserRole {
   assigned_date: string;
   valid_until: string | null;
   is_active: boolean;
+  metadata?: {
+    managed_counties?: string[];
+    [key: string]: unknown;
+  } | null;
 }
 
 export interface User {

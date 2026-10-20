@@ -7,12 +7,15 @@ import { AuthProvider } from "./context/AuthContext";
 import SystemRootLayout from "./features/system/layouts/SystemRootLayout";
 import SystemDashboard from "./features/system/pages/SystemDashboard";
 import SchoolsPage from "./features/system/pages/SchoolsPage";
+import SchoolDetailPage from "./features/system/pages/SchoolDetailPage";
 import UsersPage from "./features/system/pages/UsersPage";
 import AdministratorsPage from "./features/system/pages/AdministratorsPage";
+import AdministratorDetailPage from "./features/system/pages/administrators/CreateRegionalAdminModal";
 import RegionsPage from "./features/system/pages/RegionsPage";
 import AuditLogsPage from "./features/system/pages/AuditLogsPage";
 import SystemSettingsPage from "./features/system/pages/SystemSettingsPage";
 import ChangePasswordPage from "./features/auth/ChangePasswordPage";
+
 
 export default function App() {
   return (
@@ -40,9 +43,13 @@ export default function App() {
 
             <Route path="schools" element={<SchoolsPage />} />
 
+            <Route path="schools/:id" element={<SchoolDetailPage />} />
+
             <Route path="users" element={<UsersPage />} />
 
             <Route path="administrators" element={<AdministratorsPage />} />
+
+            <Route path="administrators/:id" element={<AdministratorDetailPage />}/>
 
             <Route path="regions" element={<RegionsPage />} />
 
