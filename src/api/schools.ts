@@ -1,7 +1,6 @@
 import api from "./client";
 
 /*  Types                                                              */
-
 export type SchoolType =
     | "primary"
     | "secondary"
@@ -36,30 +35,6 @@ export interface SchoolListItem {
     school_category: SchoolCategory;
     is_active: boolean;
 }
-
-// /** Full detail (retrieve) */
-// export interface SchoolDetail extends SchoolListItem {
-//     sub_county: string | null;
-//     ward: string | null;
-//     address: string | null;
-//     gps_coordinates: string | null;
-//     phone: string | null;
-//     email: string | null;
-//     principal: string | null;
-//     principal_name: string | null;
-//     boarding_status: BoardingStatus;
-//     capacity: number;
-//     current_enrollment: number;
-//     establishment_year: number | null;
-//     registration_number: string | null;
-//     nemis_code: string | null;
-//     onboarding_status: OnboardingStatus;
-//     onboarding_progress: number;
-//     enrollment_percentage?: number;
-//     vacancy_count?: number;
-//     created_at: string;
-//     updated_at: string;
-// }
 
 export interface OnboardingChecklist {
     has_principal: boolean;

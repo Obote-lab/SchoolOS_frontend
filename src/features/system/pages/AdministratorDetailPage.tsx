@@ -134,7 +134,7 @@ export default function AdministratorDetailPage() {
 
       {/* Hero */}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800/50">
-        <div className="h-24 bg-gradient-to-r from-violet-600 via-purple-500 to-indigo-600 sm:h-28" />
+        <div className="h-24 bg-linear-to-r from-violet-600 via-purple-500 to-indigo-600 sm:h-28" />
         <div className="relative px-5 pb-5 sm:px-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex items-end gap-4">

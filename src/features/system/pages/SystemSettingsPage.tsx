@@ -1,11 +1,26 @@
-export default function SchoolsPage() {
-    return (
-        <div>
-        <h1 className="text-2xl font-bold text-slate-900">Schools</h1>
+// src/features/system/pages/SystemSettingsPage.tsx
+import { PageHeader } from "../../../components/ui";
+import { AccountSection } from "./settings/AccountSection";
+import { AppearanceSection } from "./settings/AppearanceSection";
+import { SecuritySection } from "./settings/SecuritySection";
+import { SystemInfoSection } from "./settings/SystemInfoSection";
+import { NotificationSection } from "./settings/NotificationSection";
 
-        <p className="mt-1 text-sm text-slate-500">
-            Manage schools registered on SchoolOS.
-        </p>
-        </div>
-    );
+export default function SystemSettingsPage() {
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Settings"
+        description="Account, security, appearance, and platform information."
+      />
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <AccountSection />
+        <AppearanceSection />
+        <SecuritySection />
+        <NotificationSection />
+        <SystemInfoSection />
+      </div>
+    </div>
+  );
 }

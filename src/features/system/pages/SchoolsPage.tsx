@@ -1,4 +1,5 @@
-import { useNavigate } from "react-router-dom";
+// src/features/system/pages/SchoolsPage.tsx
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import { BuildingLibraryIcon, PlusIcon } from "@heroicons/react/24/outline";
 
@@ -29,14 +30,16 @@ import { normalizeError } from "../../../api/client";
 
 export default function SchoolsPage() {
   const { success, error: toastError } = useToast();
-
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+
   const [schools, setSchools] = useState<SchoolListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Filters
   const [search, setSearch] = useState("");
+  const [county, setCounty] = useState(() => searchParams.get("county") || "");
   const [schoolType, setSchoolType] = useState<SchoolType | "">("");
   const [category, setCategory] = useState<SchoolCategory | "">("");
 
@@ -47,38 +50,48 @@ export default function SchoolsPage() {
     setLoading(true);
     setError(null);
     try {
-      const hasFilters = Boolean(search.trim() || schoolType || category);
+      const hasFilters = Boolean(
+        search.trim() || schoolType || category || county.trim(),
+      );
       const { data } = hasFilters
         ? await schoolsAPI.search({
             search: search.trim() || undefined,
             school_type: schoolType || undefined,
             category: category || undefined,
+            county: county.trim() || undefined,
           })
         : await schoolsAPI.list();
 
-      // Handle both paginated and plain array responses
       const rows = Array.isArray(data) ? data : (data.results ?? []);
       setSchools(rows);
     } catch (err) {
-      const apiErr = normalizeError(err);
-      setError(apiErr.message);
+      setError(normalizeError(err).message);
     } finally {
       setLoading(false);
     }
-  }, [search, schoolType, category]);
+  }, [search, schoolType, category, county]);
 
-  // Initial load
+  // Keep local county in sync if URL changes (e.g. from Regions)
   useEffect(() => {
-    fetchSchools();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const fromUrl = searchParams.get("county") || "";
+    setCounty(fromUrl);
+  }, [searchParams]);
 
-  // Debounced search / filter
+  // Debounced fetch when filters change
   useEffect(() => {
     const t = setTimeout(() => {
       fetchSchools();
     }, 350);
     return () => clearTimeout(t);
-  }, [search, schoolType, category]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [search, schoolType, category, county, fetchSchools]);
+
+  function clearFilters() {
+    setSearch("");
+    setCounty("");
+    setSchoolType("");
+    setCategory("");
+    setSearchParams({});
+  }
 
   const columns: Column<SchoolListItem>[] = [
     {
@@ -126,6 +139,8 @@ export default function SchoolsPage() {
     },
   ];
 
+  const hasFilters = Boolean(search || county || schoolType || category);
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -138,6 +153,7 @@ export default function SchoolsPage() {
           </Button>
         }
       />
+
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1">
@@ -167,20 +183,35 @@ export default function SchoolsPage() {
             onChange={(e) => setCategory(e.target.value as SchoolCategory | "")}
           />
         </div>
-        {(search || schoolType || category) && (
-          <Button
-            variant="ghost"
-            size="md"
-            onClick={() => {
-              setSearch("");
-              setSchoolType("");
-              setCategory("");
-            }}
-          >
+        {hasFilters && (
+          <Button variant="ghost" size="md" onClick={clearFilters}>
             Clear
           </Button>
         )}
       </div>
+
+      {county && (
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-slate-500 dark:text-slate-400">
+            County filter:
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+            {county}
+            <button
+              type="button"
+              className="text-blue-400 hover:text-blue-700 dark:hover:text-blue-200"
+              onClick={() => {
+                setCounty("");
+                setSearchParams({});
+              }}
+              aria-label="Clear county filter"
+            >
+              ×
+            </button>
+          </span>
+        </div>
+      )}
+
       {/* Table */}
       <DataTable
         columns={columns}
@@ -199,7 +230,7 @@ export default function SchoolsPage() {
           </Button>
         }
       />
-      {/* Create modal */}
+
       <CreateSchoolModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
@@ -232,7 +263,6 @@ function CreateSchoolModal({
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // School fields
   const [schoolName, setSchoolName] = useState("");
   const [schoolCode, setSchoolCode] = useState("");
   const [schoolType, setSchoolType] = useState<SchoolType>("secondary");
@@ -246,7 +276,6 @@ function CreateSchoolModal({
   const [capacity, setCapacity] = useState("");
   const [autoSetup, setAutoSetup] = useState(true);
 
-  // Principal
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [principalEmail, setPrincipalEmail] = useState("");
@@ -362,7 +391,6 @@ function CreateSchoolModal({
           </div>
         )}
 
-        {/* School section */}
         <fieldset className="space-y-4">
           <legend className="text-sm font-semibold text-slate-900 dark:text-white">
             School details
@@ -464,12 +492,11 @@ function CreateSchoolModal({
           </div>
         </fieldset>
 
-        {/* Principal section */}
         <fieldset className="space-y-4 border-t border-slate-200 pt-5 dark:border-slate-700">
           <legend className="text-sm font-semibold text-slate-900 dark:text-white">
             First principal
           </legend>
-          <p className="text-xs text-slate-500 dark:text-slate-400 -mt-2">
+          <p className="-mt-2 text-xs text-slate-500 dark:text-slate-400">
             A login will be created for this person. Provide email or phone (or
             both).
           </p>
@@ -509,7 +536,6 @@ function CreateSchoolModal({
           </div>
         </fieldset>
 
-        {/* Options */}
         <label className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
           <input
             type="checkbox"
