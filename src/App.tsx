@@ -17,6 +17,10 @@ import AuditLogsPage from "./features/system/pages/AuditLogsPage";
 import SystemSettingsPage from "./features/system/pages/SystemSettingsPage";
 import ChangePasswordPage from "./features/auth/ChangePasswordPage";
 
+import AnalyticsPage from "./features/system/pages/analytics/AnalyticsPage";
+import BrandingPage from "./features/system/pages/branding/BrandingPage";
+
+
 export default function App() {
   return (
     <AuthProvider>
@@ -35,22 +39,17 @@ export default function App() {
           >
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<SystemDashboard />} />
-
             <Route path="schools" element={<SchoolsPage />} />
             <Route path="schools/:id" element={<SchoolDetailPage />} />
-
             <Route path="users" element={<UsersPage />} />
             <Route path="users/:id" element={<UserDetailPage />} />
-
             <Route path="administrators" element={<AdministratorsPage />} />
-            <Route
-              path="administrators/:id"
-              element={<AdministratorDetailPage />}
-            />
-
+            <Route path="administrators/:id" element={<AdministratorDetailPage />}/>
             <Route path="regions" element={<RegionsPage />} />
             <Route path="audit-logs" element={<AuditLogsPage />} />
+            <Route path="branding" element={<BrandingPage />} />
             <Route path="settings" element={<SystemSettingsPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/system" replace />} />

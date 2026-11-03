@@ -108,10 +108,15 @@ export default function Footer(_props: { collapsed?: boolean }) {
               </span>
               <span className="flex items-center gap-1 text-slate-400 dark:text-slate-500">
                 Made with
-                <HeartIcon className="h-3 w-3 text-red-500" />
+                <HeartIcon className="h-3 w-3 text-lime-500" />
                 by
-                <span className="font-medium" style={{ color: primary }}>
-                  IGSSAX TEQ
+                <span className="font-bold">
+                  <span className="text-primary" style={{ color: primary }}>
+                    IGSSAX
+                  </span>
+                  <span className="text-success" style={{ color: "green" }}>
+                    TEQ
+                  </span>
                 </span>
               </span>
             </div>
