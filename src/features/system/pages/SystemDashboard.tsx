@@ -1,6 +1,7 @@
 // src/features/system/pages/SystemDashboard.tsx
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../../context/AuthContext";
+import { useBrandingOptional } from "../../../context/BrandingContext";
 import { Button, Spinner } from "../../../components/ui";
 import { useDashboardData } from "./dashboard/useDashboardData";
 import { KpiGrid } from "./dashboard/KpiGrid";
@@ -18,12 +19,14 @@ import { QuickActions } from "./dashboard/QuickActions";
 
 export default function SystemDashboard() {
   const { currentUser } = useAuth();
+  const branding = useBrandingOptional();
+  const primary = branding?.primary ?? "#0B5FFF";
   const { data, loading, error, reload } = useDashboardData();
 
   if (loading && !data) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <Spinner size="lg" className="text-blue-600" />
+        <Spinner size="lg" style={{ color: primary }} />
       </div>
     );
   }
@@ -40,19 +43,29 @@ export default function SystemDashboard() {
   if (!data) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
+      {/* Page header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Overview
+          </p>
+          <h1 className="mt-0.5 text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
             System dashboard
           </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
             Welcome back
             {currentUser?.first_name ? `, ${currentUser.first_name}` : ""}.
-            Platform overview across schools, users, and health.
+            Schools, users, and platform health at a glance.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={reload} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={reload}
+          disabled={loading}
+          className="shrink-0 self-start sm:self-auto"
+        >
           <ArrowPathIcon
             className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
           />
@@ -62,37 +75,44 @@ export default function SystemDashboard() {
 
       <KpiGrid summary={data.summary} />
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2">
+      {/* County + type — 2 cols from sm, wider on xl+ */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3 2xl:grid-cols-4">
+        <div className="sm:col-span-2 xl:col-span-2 2xl:col-span-3">
           <SchoolsByCountyBar data={data.byCounty} />
         </div>
         <SchoolTypeDonut data={data.byType} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+      {/* Trends — 2 on sm, 3 on xl */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
         <UserGrowthArea data={data.userGrowth} />
         <EnrollmentTrendLine data={data.enrollmentTrend} />
-        <ActiveMixPie data={data.activeMix} />
+        <div className="sm:col-span-2 xl:col-span-1">
+          <ActiveMixPie data={data.activeMix} />
+        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* Funnel + health — always 2 from sm up */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-5">
         <OnboardingFunnel data={data.onboardingFunnel} />
         <HealthRadar data={data.healthRadar} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2">
+      {/* Stacked + quick actions */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
+        <div className="sm:col-span-2 xl:col-span-2">
           <StackedCategoryBar data={data.categoryStack} />
         </div>
         <QuickActions />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* Activity */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-5">
         <ActivityHeatmap data={data.activityHeat} />
         <RecentActivityFeed users={data.recentUsers} />
       </div>
 
-      <p className="text-center text-xs text-slate-400">
+      <p className="pb-2 text-center text-xs text-slate-400 dark:text-slate-500">
         Last updated {data.lastUpdated.toLocaleString()}
       </p>
     </div>

@@ -132,15 +132,13 @@ export const brandingAPI = {
   updateSystem: (id: string, data: SystemBrandingUpdate) =>
     api.patch<SystemBranding>(`${BASE}/system/${id}/`, data),
 
-  /** Logos require multipart. */
+  /** Logos require multipart — let axios set Content-Type + boundary. */
   uploadSystemAssets: (id: string, files: Record<string, File>) => {
     const form = new FormData();
     Object.entries(files).forEach(([key, file]) => {
       if (file) form.append(key, file);
     });
-    return api.patch<SystemBranding>(`${BASE}/system/${id}/`, form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    return api.patch<SystemBranding>(`${BASE}/system/${id}/`, form);
   },
 
   setMode: (mode: PlatformMode, mode_label?: string) =>

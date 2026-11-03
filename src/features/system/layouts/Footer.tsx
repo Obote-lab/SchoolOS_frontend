@@ -1,17 +1,18 @@
 // src/features/system/layouts/Footer.tsx
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   HeartIcon,
   DocumentTextIcon,
   LifebuoyIcon,
   ChartBarIcon,
-  // ArrowUpIcon,
   ShieldCheckIcon,
   ClockIcon,
   ServerIcon,
   ChevronUpIcon,
 } from "@heroicons/react/24/outline";
+import { useBrandingOptional } from "../../../context/BrandingContext";
+import { cn } from "../../../lib/cn";
 
 interface SystemStatus {
   api: boolean;
@@ -21,8 +22,19 @@ interface SystemStatus {
   responseTime: number;
 }
 
-export default function Footer({ collapsed }: { collapsed: boolean }) {
-  const [currentYear] = useState(new Date().getFullYear());
+const VERSION = "v2.1.0";
+const ENV =
+  (typeof import.meta !== "undefined" &&
+    (import.meta as { env?: { MODE?: string } }).env?.MODE) ||
+  "production";
+
+export default function Footer(_props: { collapsed?: boolean }) {
+  // Padding is owned by SystemRootLayout's content column — do not re-apply here.
+  const branding = useBrandingOptional();
+  const primary = branding?.primary ?? "#0B5FFF";
+  const logoUrl = branding?.logoUrl ?? null;
+
+  const year = new Date().getFullYear();
   const [status, setStatus] = useState<SystemStatus>({
     api: true,
     database: true,
@@ -30,230 +42,198 @@ export default function Footer({ collapsed }: { collapsed: boolean }) {
     uptime: "99.98%",
     responseTime: 124,
   });
+  const [checkedAt, setCheckedAt] = useState(() => new Date());
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Check scroll position for scroll-to-top button
+  const healthy = status.api && status.database && status.auth;
+
   useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 500);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const onScroll = () => setShowScrollTop(window.scrollY > 400);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Simulate system status checking
   useEffect(() => {
-    const interval = setInterval(() => {
-      // In production, this would be an API call
+    const id = window.setInterval(() => {
       setStatus((prev) => ({
         ...prev,
         responseTime: Math.floor(Math.random() * 50 + 100),
       }));
-    }, 30000);
-    return () => clearInterval(interval);
+      setCheckedAt(new Date());
+    }, 30_000);
+    return () => window.clearInterval(id);
   }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   return (
     <>
       <footer
-        className={`
-          border-t transition-all duration-500 ease-in-out
-          px-4 py-4 sm:px-6
-          ${collapsed ? "lg:pl-20" : "lg:pl-64"}
-          ${
-            status.api && status.database && status.auth
-              ? "border-emerald-200 dark:border-emerald-800/30"
-              : "border-amber-200 dark:border-amber-800/30"
-          }
-          ${
-            status.api && status.database && status.auth
-              ? "bg-white dark:bg-slate-900"
-              : "bg-amber-50/50 dark:bg-amber-900/10"
-          }
-        `}
+        className={cn(
+          "border-t px-4 py-3 sm:px-6",
+          healthy
+            ? "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/80"
+            : "border-amber-200 bg-amber-50/40 dark:border-amber-900/40 dark:bg-amber-950/20",
+        )}
       >
-        <div className="flex flex-col gap-4">
-          {/* Main Footer Content */}
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
-            {/* Left - Brand & Copyright */}
-            <div className="flex flex-col sm:flex-row items-center gap-3 text-xs">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col items-center justify-between gap-3 lg:flex-row">
+            {/* Brand */}
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-lg bg-blue-600 flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-white">S</span>
-                  </div>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">
-                    SchoolOS
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt=""
+                    className="h-5 w-5 rounded object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <span
+                    className="flex h-5 w-5 items-center justify-center rounded text-[9px] font-bold text-white"
+                    style={{ backgroundColor: primary }}
+                  >
+                    S
                   </span>
-                </div>
-                <span className="hidden sm:inline text-slate-300 dark:text-slate-600">
-                  •
-                </span>
-                <span className="text-slate-400 dark:text-slate-500">
-                  © {currentYear} All rights reserved
+                )}
+                <span className="font-semibold text-slate-700 dark:text-slate-200">
+                  SchoolOS
                 </span>
               </div>
+              <span className="hidden text-slate-300 sm:inline dark:text-slate-600">
+                ·
+              </span>
+              <span className="text-slate-400 dark:text-slate-500">
+                © {year}
+              </span>
               <span className="flex items-center gap-1 text-slate-400 dark:text-slate-500">
-                Made with{" "}
-                <HeartIcon className="h-3 w-3 text-red-500 animate-pulse" /> by
-                <span className="font-medium text-blue-600 dark:text-blue-400">
+                Made with
+                <HeartIcon className="h-3 w-3 text-red-500" />
+                by
+                <span className="font-medium" style={{ color: primary }}>
                   IGSSAX TEQ
                 </span>
               </span>
             </div>
 
-            {/* Center - System Status */}
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              {/* Status Badge */}
-              <div className="flex items-center gap-2">
-                <span
-                  className={`
-                  inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium
-                  transition-all duration-300
-                  ${
-                    status.api && status.database && status.auth
-                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                      : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                  }
-                `}
-                >
+            {/* Status */}
+            <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium",
+                  healthy
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                    : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+                )}
+              >
+                <span className="relative flex h-1.5 w-1.5">
+                  {!healthy && (
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                  )}
                   <span
-                    className={`
-                    relative flex h-1.5 w-1.5
-                    ${status.api && status.database && status.auth ? "" : "animate-pulse"}
-                  `}
-                  >
-                    <span
-                      className={`
-                      absolute inline-flex h-full w-full rounded-full
-                      ${
-                        status.api && status.database && status.auth
-                          ? "bg-emerald-500"
-                          : "bg-amber-500"
-                      }
-                      ${status.api && status.database && status.auth ? "" : "animate-ping opacity-75"}
-                    `}
-                    ></span>
-                    <span
-                      className={`
-                      relative inline-flex rounded-full h-1.5 w-1.5
-                      ${
-                        status.api && status.database && status.auth
-                          ? "bg-emerald-500"
-                          : "bg-amber-500"
-                      }
-                    `}
-                    ></span>
-                  </span>
-                  {status.api && status.database && status.auth
-                    ? "All Systems Operational"
-                    : "Partial System Outage"}
+                    className={cn(
+                      "relative inline-flex h-1.5 w-1.5 rounded-full",
+                      healthy ? "bg-emerald-500" : "bg-amber-500",
+                    )}
+                  />
                 </span>
-              </div>
+                {healthy ? "All systems operational" : "Partial outage"}
+              </span>
 
-              {/* Uptime */}
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+              <span className="hidden items-center gap-1 text-[11px] text-slate-500 sm:inline-flex dark:text-slate-400">
                 <ClockIcon className="h-3.5 w-3.5" />
-                <span>Uptime: {status.uptime}</span>
-              </div>
-
-              {/* Response Time */}
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                {status.uptime}
+              </span>
+              <span className="hidden items-center gap-1 text-[11px] text-slate-500 sm:inline-flex dark:text-slate-400">
                 <ServerIcon className="h-3.5 w-3.5" />
-                <span>{status.responseTime}ms</span>
-              </div>
+                {status.responseTime}ms
+              </span>
+              <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
+                <ShieldCheckIcon
+                  className="h-3.5 w-3.5"
+                  style={{ color: primary }}
+                />
+                <span className="font-mono">{VERSION}</span>
+              </span>
+            </div>
 
-              {/* Version */}
-              <div className="flex items-center gap-1.5 text-xs">
-                <ShieldCheckIcon className="h-3.5 w-3.5 text-blue-500" />
-                <span className="font-mono text-slate-400 dark:text-slate-500">
-                  v2.1.0
+            {/* Links */}
+            <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+              {[
+                { to: "/system/settings", label: "Settings" },
+                {
+                  to: "/system/docs",
+                  label: "Docs",
+                  icon: DocumentTextIcon,
+                },
+                {
+                  to: "/system/help",
+                  label: "Support",
+                  icon: LifebuoyIcon,
+                },
+                {
+                  to: "/system/health",
+                  label: "Status",
+                  icon: ChartBarIcon,
+                },
+              ].map((item, i) => (
+                <span key={item.to} className="contents">
+                  {i > 0 && (
+                    <span className="text-slate-300 dark:text-slate-600">
+                      |
+                    </span>
+                  )}
+                  <Link
+                    to={item.to}
+                    className="inline-flex items-center gap-1 transition-opacity hover:opacity-80"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = primary;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "";
+                    }}
+                  >
+                    {item.icon && <item.icon className="h-3.5 w-3.5" />}
+                    {item.label}
+                  </Link>
                 </span>
-              </div>
-            </div>
-
-            {/* Right - Quick Links */}
-            <div className="flex items-center gap-3">
-              <Link
-                to="/system/settings"
-                className="text-xs text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
-              >
-                Settings
-              </Link>
-              <span className="text-slate-300 dark:text-slate-600">|</span>
-              <a
-                href="#"
-                className="text-xs text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors flex items-center gap-1"
-              >
-                <DocumentTextIcon className="h-3.5 w-3.5" />
-                Docs
-              </a>
-              <span className="text-slate-300 dark:text-slate-600">|</span>
-              <a
-                href="#"
-                className="text-xs text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors flex items-center gap-1"
-              >
-                <LifebuoyIcon className="h-3.5 w-3.5" />
-                Support
-              </a>
-              <span className="text-slate-300 dark:text-slate-600">|</span>
-              <a
-                href="#"
-                className="text-xs text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors flex items-center gap-1"
-              >
-                <ChartBarIcon className="h-3.5 w-3.5" />
-                Status
-              </a>
-            </div>
+              ))}
+            </nav>
           </div>
 
-          {/* Bottom Bar - Additional Info */}
           <div
-            className={`
-            flex flex-col sm:flex-row items-center justify-between gap-2 pt-3 border-t text-[10px]
-            ${
-              status.api && status.database && status.auth
-                ? "border-slate-200 dark:border-slate-700"
-                : "border-amber-200 dark:border-amber-800/30"
-            }
-          `}
+            className={cn(
+              "flex flex-col items-center justify-between gap-1 border-t pt-2 text-[10px] text-slate-400 sm:flex-row dark:text-slate-500",
+              healthy
+                ? "border-slate-100 dark:border-slate-800"
+                : "border-amber-200/60 dark:border-amber-900/30",
+            )}
           >
-            <div className="flex items-center gap-4 text-slate-400 dark:text-slate-500">
-              <span>Last checked: {new Date().toLocaleTimeString()}</span>
-              <span className="hidden sm:inline">•</span>
-              <span>Environment: Production</span>
+            <div className="flex flex-wrap items-center justify-center gap-x-3">
+              <span>Checked {checkedAt.toLocaleTimeString()}</span>
+              <span className="hidden sm:inline">·</span>
+              <span className="capitalize">Env: {ENV}</span>
             </div>
-            <div className="flex items-center gap-4 text-slate-400 dark:text-slate-500">
-              <span>API: v2.1.0</span>
-              <span className="hidden sm:inline">•</span>
-              <span>Client: v2.1.0</span>
+            <div className="flex items-center gap-3">
+              <span>API {VERSION}</span>
+              <span className="hidden sm:inline">·</span>
+              <span>Client {VERSION}</span>
             </div>
           </div>
         </div>
       </footer>
 
-      {/* Scroll to Top Button */}
       <button
-        onClick={scrollToTop}
-        className={`
-          fixed bottom-24 right-6 z-40
-          flex h-10 w-10 items-center justify-center
-          rounded-full shadow-lg transition-all duration-300
-          ${
-            showScrollTop
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-10 pointer-events-none"
-          }
-          ${
-            status.api && status.database && status.auth
-              ? "bg-blue-600 text-white hover:bg-blue-700 hover:scale-110"
-              : "bg-amber-600 text-white hover:bg-amber-700 hover:scale-110"
-          }
-        `}
+        type="button"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className={cn(
+          "fixed bottom-20 right-5 z-40 flex h-10 w-10 items-center justify-center rounded-full text-white shadow-lg transition-all duration-300 sm:bottom-24 sm:right-6",
+          showScrollTop
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-8 opacity-0",
+          !healthy && "bg-amber-600 hover:bg-amber-700",
+        )}
+        style={healthy ? { backgroundColor: primary } : undefined}
         aria-label="Scroll to top"
       >
         <ChevronUpIcon className="h-5 w-5" />

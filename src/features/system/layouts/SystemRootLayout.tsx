@@ -13,7 +13,7 @@ export default function SystemRootLayout() {
 
         <div
             className={`flex flex-1 flex-col transition-all duration-300 ${
-            collapsed ? "lg:pl-20" : "lg:pl-64"
+            collapsed ? "lg:pl-20" : "lg:pl-60"
             }`}
         >
             <Navbar collapsed={collapsed} />
