@@ -6,6 +6,7 @@ import {
   ComputerDesktopIcon,
 } from "@heroicons/react/24/outline";
 import { useTheme } from "../../../../context/ThemeContext";
+import { useBrandingOptional } from "../../../../context/BrandingContext";
 import { SettingsSection } from "./SettingsSection";
 import { cn } from "../../../../lib/cn";
 
@@ -17,6 +18,7 @@ const OPTIONS = [
 
 export function AppearanceSection() {
   const { theme, setTheme, isDark } = useTheme();
+  const primary = useBrandingOptional()?.primary ?? "#0B5FFF";
 
   return (
     <SettingsSection
@@ -36,9 +38,20 @@ export function AppearanceSection() {
               className={cn(
                 "flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-sm font-medium transition",
                 active
-                  ? "border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500 dark:bg-blue-900/30 dark:text-blue-300"
+                  ? "ring-1"
                   : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800",
               )}
+              style={
+                active
+                  ? {
+                      borderColor: primary,
+                      backgroundColor: `${primary}14`,
+                      color: primary,
+                      // @ts-expect-error CSS var for ring
+                      "--tw-ring-color": primary,
+                    }
+                  : undefined
+              }
             >
               <Icon className="h-5 w-5" />
               {opt.label}

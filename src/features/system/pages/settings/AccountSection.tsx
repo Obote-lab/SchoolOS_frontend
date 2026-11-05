@@ -3,10 +3,12 @@ import { Link } from "react-router-dom";
 import { UserIcon } from "@heroicons/react/24/outline";
 import { Badge } from "../../../../components/ui";
 import { useAuth } from "../../../../context/AuthContext";
+import { useBrandingOptional } from "../../../../context/BrandingContext";
 import { SettingsSection, SettingsRow } from "./SettingsSection";
 
 export function AccountSection() {
   const { currentUser } = useAuth();
+  const primary = useBrandingOptional()?.primary ?? "#0B5FFF";
 
   if (!currentUser) {
     return (
@@ -20,6 +22,10 @@ export function AccountSection() {
     currentUser.roles?.find((r) => r.is_primary_role && r.is_active) ||
     currentUser.roles?.find((r) => r.is_active);
 
+  const initial = (currentUser.first_name || currentUser.login_id || "?")
+    .charAt(0)
+    .toUpperCase();
+
   return (
     <SettingsSection
       icon={UserIcon}
@@ -31,13 +37,15 @@ export function AccountSection() {
           <img
             src={currentUser.profile_picture}
             alt=""
-            className="h-12 w-12 rounded-full object-cover"
+            className="h-12 w-12 rounded-full object-cover ring-2 ring-offset-2 dark:ring-offset-slate-900"
+            style={{ outlineColor: primary }}
           />
         ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-lg font-semibold text-white">
-            {(currentUser.first_name || currentUser.login_id || "?")
-              .charAt(0)
-              .toUpperCase()}
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-semibold text-white shadow-sm"
+            style={{ backgroundColor: primary }}
+          >
+            {initial}
           </div>
         )}
         <div className="min-w-0">
@@ -49,6 +57,14 @@ export function AccountSection() {
           <p className="font-mono text-xs text-slate-500">
             {currentUser.login_id}
           </p>
+          {primaryRole?.role_name && (
+            <p
+              className="mt-0.5 text-xs font-medium"
+              style={{ color: primary }}
+            >
+              {primaryRole.role_name}
+            </p>
+          )}
         </div>
       </div>
 

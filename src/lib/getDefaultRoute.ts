@@ -36,3 +36,5 @@ import type { User } from "../api/users";
     // Fallback
     return "/";
 }
+
+

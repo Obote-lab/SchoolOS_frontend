@@ -1,5 +1,5 @@
 // src/features/system/pages/branding/BrandingPage.tsx
-import { Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { PageHeader } from "../../../../components/ui";
 import { useAuth } from "../../../../context/AuthContext";
 import { isSystemRoot } from "../settings/isSystemRoot";
@@ -12,7 +12,34 @@ export default function BrandingPage() {
     const root = isSystemRoot(currentUser);
 
     if (!root) {
-        return <Navigate to="/system/settings" replace />;
+        return (
+        <div className="mx-auto max-w-lg space-y-4 py-16 text-center">
+            <PageHeader
+            title="Platform branding"
+            description="This area is limited to System Root operators."
+            />
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+            Your account is signed in, but it does not currently resolve as{" "}
+            <strong>System Root</strong>. Check that an active role named{" "}
+            <code className="rounded bg-slate-100 px-1 text-xs dark:bg-slate-800">
+                System Root
+            </code>{" "}
+            is assigned (or that the user is a superuser).
+            </p>
+            <p className="text-xs text-slate-400">
+            Roles on this session:{" "}
+            {(currentUser?.roles ?? [])
+                .map((r) => `${r.role_name}${r.is_active ? "" : " (inactive)"}`)
+                .join(", ") || "none"}
+            </p>
+            <Link
+            to="/system/settings"
+            className="inline-flex text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+            >
+            Go to Settings
+            </Link>
+        </div>
+        );
     }
 
     return (
