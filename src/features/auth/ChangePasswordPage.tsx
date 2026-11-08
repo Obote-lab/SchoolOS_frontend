@@ -75,10 +75,13 @@ export default function ChangePasswordPage() {
         confirm_password: confirmPassword,
       });
 
-      await refreshUser();
+      // await refreshUser();
 
-      const destination = currentUser ? getDefaultRoute(currentUser) : "/";
-      navigate(destination, { replace: true });
+      // const destination = currentUser ? getDefaultRoute(currentUser) : "/";
+      const updated = await refreshUser(); // make refreshUser return User | null
+      const destination = getDefaultRoute(updated ?? currentUser!);
+      navigate(destination === "/" ? "/login" : destination, { replace: true });
+      // navigate(destination, { replace: true });
     } catch (err: unknown) {
       const msg =
         err && typeof err === "object" && "message" in err

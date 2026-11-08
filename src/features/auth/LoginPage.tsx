@@ -26,26 +26,49 @@ const FALLBACK_LOGO = "/schoolos2.png";
 export function LoginPage() {
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const { theme, setTheme } = useTheme();
-  const {
-    logoUrl,
-    primary,
-    branding,
-    loading: brandingLoading,
-  } = useBranding();
+  const { logoUrl, primary, branding, loading: brandingLoading } = useBranding();
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = (location.state as LocationState | null)?.from?.pathname || "/";
 
-  const [loginId, setLoginId] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
-  if (!authLoading && isAuthenticated) {
-    return <Navigate to={from} replace />;
+  if (!authLoading && isAuthenticated && currentUser) {
+    const safeFrom =
+      from && from !== "/" && from !== "/login" && from !== "/change-password"
+        ? from
+        : getDefaultRoute(currentUser);
+
+    return <Navigate to={safeFrom} replace />;
   }
+
+
+
+    const [loginId, setLoginId] = useState("");
+    const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+  
+    // hooks above — never put hooks below this line
+  
+    if (authLoading) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
+          <Spinner size="lg" style={{ color: primary }} />
+        </div>
+      );
+    }
+  
+    if (isAuthenticated) {
+      return <Navigate to={from} replace />;
+    }
+  
+
+
+
+
+
 
   if (authLoading) {
     return (

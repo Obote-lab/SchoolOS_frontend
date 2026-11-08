@@ -1,40 +1,55 @@
 import type { User } from "../api/users";
 
-    /**
-     * Decide where the user should land after login.
-     * This will expand as you add more portals (Regional, School, Teacher, Parent...).
-     */
-    export function getDefaultRoute(user: User): string {
-    // 1. System Root / Superuser
-    if (user.is_superuser) {
+export function getDefaultRoute(user: User): string {
+    const anyUser = user as User & { is_superuser?: boolean };
+
+    if (anyUser.is_superuser) {
         return "/system/dashboard";
     }
 
-    // 2. Check primary role
-    const primaryRole = user.roles?.find((r) => r.is_primary_role)?.role_name;
+    const roles = user.roles ?? [];
+    const active = roles.filter((r) => r.is_active !== false);
+    const primary =
+        active.find((r) => r.is_primary_role)?.role_name ||
+        active[0]?.role_name ||
+        "";
 
-    if (primaryRole) {
-        const role = primaryRole.toLowerCase();
+    const name = primary.toLowerCase().trim();
 
-        if (role.includes("regional")) {
+    if (
+        name === "system root" ||
+        name === "platform admin" ||
+        name === "super admin" ||
+        name.includes("system root")
+    ) {
+        return "/system/dashboard";
+    }
+
+    if (name.includes("regional") || name.includes("county admin")) {
         return "/regional/dashboard";
-        }
+    }
 
-        if (role.includes("principal") || role.includes("deputy")) {
+    if (name.includes("principal") || name.includes("deputy")) {
         return "/school/dashboard";
-        }
+    }
 
-        if (role.includes("teacher")) {
+    if (name.includes("teacher")) {
         return "/teacher/dashboard";
-        }
+    }
 
-        if (role.includes("parent") || role.includes("guardian")) {
+    if (name.includes("parent") || name.includes("guardian")) {
         return "/parent/dashboard";
+    }
+
+    for (const r of active) {
+        const n = (r.role_name || "").toLowerCase();
+        if (n.includes("system root") || n.includes("platform admin")) {
+        return "/system/dashboard";
+        }
+        if (n.includes("regional") || n.includes("county admin")) {
+        return "/regional/dashboard";
         }
     }
 
-    // Fallback
-    return "/";
+    return "/login";
 }
-
-
