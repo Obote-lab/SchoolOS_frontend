@@ -25,74 +25,96 @@ import RegionalDashboard from "./features/regional/pages/RegionalDashboard";
 import RegionalSettingsPage from "./features/regional/pages/RegionalSettingsPage";
 import RegionalComingSoon from "./features/regional/pages/RegionalComingSoon";
 
+import RolesAccessPage from "./features/system/pages/RolesAccessPage";
+
 export default function App() {
   return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/change-password" element={<ChangePasswordPage />} />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/change-password" element={<ChangePasswordPage />} />
 
-          {/* ===== System Root ===== */}
-          <Route path="/system"element={<ProtectedRoute><SystemRootLayout /> </ProtectedRoute> }>
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<SystemDashboard />} />
-            <Route path="schools" element={<SchoolsPage />} />
-            <Route path="schools/:id" element={<SchoolDetailPage />} />
-            <Route path="users" element={<UsersPage />} />
-            <Route path="users/:id" element={<UserDetailPage />} />
-            <Route path="administrators" element={<AdministratorsPage />} />
-            <Route path="administrators/:id"element={<AdministratorDetailPage />}/>
-            <Route path="regions" element={<RegionsPage />} />
-            <Route path="audit-logs" element={<AuditLogsPage />} />
-            <Route path="branding" element={<BrandingPage />} />
-            <Route path="settings" element={<SystemSettingsPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-          </Route>
-
-          {/* Regional Admin (SIBLING of /system, not child) */}
+        {/* ===== System Root ===== */}
+        <Route
+          path="/system"
+          element={
+            <ProtectedRoute>
+              <SystemRootLayout />{" "}
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<SystemDashboard />} />
+          <Route path="schools" element={<SchoolsPage />} />
+          <Route path="schools/:id" element={<SchoolDetailPage />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="users/:id" element={<UserDetailPage />} />
+          <Route path="administrators" element={<AdministratorsPage />} />
           <Route
-            path="/regional"
-            element={
-              <RegionalProtectedRoute>
-                <RegionalLayout />
-              </RegionalProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<RegionalDashboard />} />
-            <Route
-              path="schools"
-              element={
-                <RegionalComingSoon
-                  title="Schools"
-                  description="Schools in your managed counties."
-                />
-              }
-            />
-            <Route
-              path="principals"
-              element={
-                <RegionalComingSoon
-                  title="Principals"
-                  description="School admins in your counties."
-                />
-              }
-            />
-            <Route
-              path="analytics"
-              element={
-                <RegionalComingSoon
-                  title="Analytics"
-                  description="County-scoped trends."
-                />
-              }
-            />
-            <Route path="settings" element={<RegionalSettingsPage />} />
-            <Route  path="help" element={<RegionalComingSoon title="Help" description="Regional operator guides." /> } />
-          </Route>
+            path="administrators/:id"
+            element={<AdministratorDetailPage />}
+          />
+          <Route path="regions" element={<RegionsPage />} />
+          <Route path="audit-logs" element={<AuditLogsPage />} />
+          <Route path="branding" element={<BrandingPage />} />
+          <Route path="settings" element={<SystemSettingsPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+        </Route>
 
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </BrowserRouter>
+        {/* Regional Admin (SIBLING of /system, not child) */}
+        <Route
+          path="/regional"
+          element={
+            <RegionalProtectedRoute>
+              <RegionalLayout />
+            </RegionalProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<RegionalDashboard />} />
+          <Route
+            path="schools"
+            element={
+              <RegionalComingSoon
+                title="Schools"
+                description="Schools in your managed counties."
+              />
+            }
+          />
+          <Route
+            path="principals"
+            element={
+              <RegionalComingSoon
+                title="Principals"
+                description="School admins in your counties."
+              />
+            }
+          />
+          <Route
+            path="analytics"
+            element={
+              <RegionalComingSoon
+                title="Analytics"
+                description="County-scoped trends."
+              />
+            }
+          />
+          <Route path="settings" element={<RegionalSettingsPage />} />
+          <Route
+            path="help"
+            element={
+              <RegionalComingSoon
+                title="Help"
+                description="Regional operator guides."
+              />
+            }
+          />
+
+          <Route path="roles" element={<RolesAccessPage />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

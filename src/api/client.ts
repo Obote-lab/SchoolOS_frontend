@@ -2,7 +2,6 @@ import axios from "axios";
 import type {
   AxiosError,
   AxiosInstance,
-  AxiosRequestConfig,
   InternalAxiosRequestConfig,
 } from "axios";
 
@@ -10,18 +9,20 @@ const baseURL = (
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
 ).replace(/\/$/, "");
 
-/**
- * Standard API error returned by our frontend API layer.
- */
+/*
+| TYPES
+*/
+
 export interface ApiError {
   status?: number;
   message: string;
   data?: unknown;
 }
 
-/**
- * Convert Axios/DRF errors into a predictable frontend error.
- */
+/*
+| ERROR NORMALIZATION
+*/
+
 export function normalizeError(error: unknown): ApiError {
   if (!axios.isAxiosError(error)) {
     if (error instanceof Error) {
@@ -48,14 +49,6 @@ export function normalizeError(error: unknown): ApiError {
     } else if (typeof responseData.message === "string") {
       message = responseData.message;
     } else {
-      /**
-       * DRF validation errors:
-       *
-       * {
-       *   "login_id": ["This field is required."],
-       *   "password": ["This field is required."]
-       * }
-       */
       const firstError = Object.values(responseData).find(
         (value) => Array.isArray(value) && value.length > 0,
       );
@@ -73,15 +66,13 @@ export function normalizeError(error: unknown): ApiError {
   };
 }
 
+/*
+| AXIOS INSTANCE
+*/
+
 const api: AxiosInstance = axios.create({
   baseURL,
-
-  /**
-   * Keep this because your backend may use cookies
-   * in addition to JWT authentication.
-   */
   withCredentials: true,
-
   timeout: 15000,
 
   headers: {
@@ -90,8 +81,80 @@ const api: AxiosInstance = axios.create({
   },
 });
 
+/*
+| TOKEN STORAGE
+*/
+
+export function clearAuthStorage(): void {
+  localStorage.removeItem("access");
+  localStorage.removeItem("refresh");
+}
+
+/*
+
+| TOKEN REFRESH
+*/
+
 /**
- * Attach access token to every authenticated request.
+ * Shared refresh promise prevents multiple simultaneous
+ * requests from refreshing the same token independently.
+ */
+let refreshPromise: Promise<string> | null = null;
+
+async function refreshAccessToken(): Promise<string> {
+  const refreshToken = localStorage.getItem("refresh");
+
+  if (!refreshToken) {
+    clearAuthStorage();
+    throw new Error("No refresh token available.");
+  }
+
+  /**
+   * Use plain axios rather than the authenticated API
+   * instance to prevent recursive refresh attempts.
+   */
+  const response = await axios.post<{
+    access: string;
+    refresh?: string;
+  }>(
+    `${baseURL}/api/auth/token/refresh/`,
+    {
+      refresh: refreshToken,
+    },
+    {
+      timeout: 15000,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    },
+  );
+
+  const { access, refresh } = response.data;
+
+  if (!access) {
+    throw new Error("Token refresh response is missing an access token.");
+  }
+
+  localStorage.setItem("access", access);
+
+  /**
+   * Support SimpleJWT refresh-token rotation.
+   */
+  if (refresh) {
+    localStorage.setItem("refresh", refresh);
+  }
+
+  return access;
+}
+
+/*
+| REQUEST INTERCEPTOR
+*/
+
+/**
+ * Automatically attach the current access token
+ * to authenticated API requests.
  */
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
@@ -103,55 +166,22 @@ api.interceptors.request.use(
 
     return config;
   },
+
   (error) => Promise.reject(normalizeError(error)),
 );
 
-/**
- * Prevent multiple simultaneous requests from
- * attempting to refresh the token independently.
- */
-let refreshPromise: Promise<string> | null = null;
-
-async function refreshAccessToken(): Promise<string> {
-  const refreshToken = localStorage.getItem("refresh");
-
-  if (!refreshToken) {
-    throw new Error("No refresh token available.");
-  }
-
-  const response = await axios.post<{ access: string; refresh?: string }>(
-    `${baseURL}/api/auth/token/refresh/`,
-    {
-      refresh: refreshToken,
-    },
-    {
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    },
-  );
-
-  const { access, refresh } = response.data;
-
-  if (!access) {
-    throw new Error("Token refresh failed.");
-  }
-
-  localStorage.setItem("access", access);
-
-  /**
-   * SimpleJWT may rotate the refresh token.
-   */
-  if (refresh) {
-    localStorage.setItem("refresh", refresh);
-  }
-
-  return access;
-}
+/*
+| RESPONSE INTERCEPTOR
+*/
 
 /**
- * Handle expired access tokens.
+ * Refresh expired access tokens automatically.
+ *
+ * Important:
+ * - Only HTTP 401 triggers token refresh.
+ * - Login and refresh requests are excluded.
+ * - Temporary server/network errors do not clear tokens.
+ * - Invalid refresh credentials clear local authentication.
  */
 api.interceptors.response.use(
   (response) => response,
@@ -161,7 +191,7 @@ api.interceptors.response.use(
       | (InternalAxiosRequestConfig & {
           _retry?: boolean;
         })
-      | null;
+      | undefined;
 
     if (!originalRequest) {
       return Promise.reject(normalizeError(error));
@@ -169,58 +199,62 @@ api.interceptors.response.use(
 
     const requestUrl = originalRequest.url || "";
 
-    const isRefreshRequest = requestUrl.includes("/api/auth/token/refresh/");
+    const isAuthRequest =
+      requestUrl.includes("/api/v1/accounts/auth/login/") ||
+      requestUrl.includes("/api/v1/accounts/auth/logout/") ||
+      requestUrl.includes("/api/auth/token/refresh/");
 
-    /**
-     * Only attempt refresh for 401 responses.
-     */
-    if (
+    const shouldRefresh =
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !isRefreshRequest
-    ) {
-      originalRequest._retry = true;
+      !isAuthRequest;
 
-      try {
-        /**
-         * If another request is already refreshing,
-         * wait for that request instead of starting another one.
-         */
-        if (!refreshPromise) {
-          refreshPromise = refreshAccessToken().finally(() => {
-            refreshPromise = null;
-          });
-        }
-
-        const newAccessToken = await refreshPromise;
-
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
-        return api(originalRequest);
-      } catch (refreshError) {
-        clearAuthStorage();
-
-        /**
-         * Let React Router/AuthContext ultimately handle
-         * the authentication state.
-         *
-         * We avoid forcing window.location here because
-         * that causes a full application reload.
-         */
-        return Promise.reject(normalizeError(refreshError));
-      }
+    if (!shouldRefresh) {
+      return Promise.reject(normalizeError(error));
     }
 
-    return Promise.reject(normalizeError(error));
+    originalRequest._retry = true;
+
+    try {
+      /**
+       * Reuse an existing refresh operation if another
+       * request has already started refreshing.
+       */
+      if (!refreshPromise) {
+        refreshPromise = refreshAccessToken().finally(() => {
+          refreshPromise = null;
+        });
+      }
+
+      const newAccessToken = await refreshPromise;
+
+      originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+      /**
+       * Retry the original request with the new token.
+       */
+      return api(originalRequest);
+    } catch (refreshError) {
+      const normalized = normalizeError(refreshError);
+
+      /**
+       * Clear credentials only when the backend explicitly
+       * rejects the refresh token.
+       *
+       * Do not clear credentials for network errors,
+       * timeouts, server errors or rate limiting.
+       */
+      if (normalized.status === 400 || normalized.status === 401) {
+        clearAuthStorage();
+      }
+
+      return Promise.reject(normalized);
+    }
   },
 );
 
-/**
- * Clear all locally stored authentication credentials.
- */
-export function clearAuthStorage(): void {
-  localStorage.removeItem("access");
-  localStorage.removeItem("refresh");
-}
+/*
+  EXPORT
+*/
 
 export default api;

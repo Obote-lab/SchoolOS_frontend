@@ -17,59 +17,53 @@ import { cn } from "../../lib/cn";
 
 type LocationState = {
   from?: {
-    pathname: string;
+    pathname?: string;
   };
 };
 
 const FALLBACK_LOGO = "/schoolos2.png";
 
 export function LoginPage() {
-  const { login, isAuthenticated, loading: authLoading } = useAuth();
+  // All hooks must be called before any conditional return.
+  const {
+    login,
+    isAuthenticated,
+    currentUser,
+    loading: authLoading,
+  } = useAuth();
+
   const { theme, setTheme } = useTheme();
-  const { logoUrl, primary, branding, loading: brandingLoading } = useBranding();
+
+  const {
+    logoUrl,
+    primary,
+    branding,
+    loading: brandingLoading,
+  } = useBranding();
+
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = (location.state as LocationState | null)?.from?.pathname || "/";
+  const [loginId, setLoginId] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
+  // Preserve the route the user originally wanted to visit.
+  const requestedPath = (location.state as LocationState | null)?.from
+    ?.pathname;
 
-  if (!authLoading && isAuthenticated && currentUser) {
-    const safeFrom =
-      from && from !== "/" && from !== "/login" && from !== "/change-password"
-        ? from
-        : getDefaultRoute(currentUser);
+  // Only allow internal application paths.
+  const safeFrom =
+    requestedPath &&
+    requestedPath.startsWith("/") &&
+    !requestedPath.startsWith("//") &&
+    !["/login", "/change-password"].includes(requestedPath)
+      ? requestedPath
+      : null;
 
-    return <Navigate to={safeFrom} replace />;
-  }
-
-
-
-    const [loginId, setLoginId] = useState("");
-    const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [submitting, setSubmitting] = useState(false);
-  
-    // hooks above — never put hooks below this line
-  
-    if (authLoading) {
-      return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
-          <Spinner size="lg" style={{ color: primary }} />
-        </div>
-      );
-    }
-  
-    if (isAuthenticated) {
-      return <Navigate to={from} replace />;
-    }
-  
-
-
-
-
-
-
+  // Show loading while authentication state is being restored.
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
@@ -78,8 +72,20 @@ export function LoginPage() {
     );
   }
 
+  // Redirect users who are already authenticated.
+  if (isAuthenticated && currentUser) {
+    const destination = safeFrom || getDefaultRoute(currentUser);
+
+    return <Navigate to={destination} replace />;
+  }
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    if (!loginId.trim() || !password || submitting) {
+      return;
+    }
+
     setError(null);
     setSubmitting(true);
 
@@ -89,28 +95,37 @@ export function LoginPage() {
         password,
       });
 
+      // Force users to change temporary passwords.
       if (mustChangePassword) {
         navigate("/change-password", { replace: true });
         return;
       }
 
-      const destination = getDefaultRoute(user);
+      // Return to the requested page or the user's default dashboard.
+      const destination = safeFrom || getDefaultRoute(user);
+
       navigate(destination, { replace: true });
     } catch (err: unknown) {
-      const msg =
-        err && typeof err === "object" && "message" in err
-          ? (err as { message: string }).message
-          : "Login failed. Check your login ID and password.";
-      setError(msg);
+      let message = "Login failed. Check your login ID and password.";
+
+      if (err instanceof Error && err.message) {
+        message = err.message;
+      }
+
+      setError(message);
     } finally {
       setSubmitting(false);
     }
   }
 
   const cycleTheme = () => {
-    if (theme === "light") setTheme("dark");
-    else if (theme === "dark") setTheme("system");
-    else setTheme("light");
+    if (theme === "light") {
+      setTheme("dark");
+    } else if (theme === "dark") {
+      setTheme("system");
+    } else {
+      setTheme("light");
+    }
   };
 
   const ThemeIcon =
@@ -121,11 +136,13 @@ export function LoginPage() {
         : ComputerDesktopIcon;
 
   const displayLogo = logoUrl || FALLBACK_LOGO;
+
   const welcome =
     branding?.login?.welcome_message || "Sign in to your school account";
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8 transition-colors dark:bg-slate-900">
+      {/* Theme switcher */}
       <button
         type="button"
         onClick={cycleTheme}
@@ -137,6 +154,7 @@ export function LoginPage() {
       </button>
 
       <div className="w-full max-w-md">
+        {/* SchoolOS branding */}
         <div className="mb-8 text-center">
           <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
             {brandingLoading && !logoUrl ? (
@@ -147,27 +165,32 @@ export function LoginPage() {
                 alt="SchoolOS"
                 className="h-full w-full object-contain p-1.5"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = FALLBACK_LOGO;
+                  e.currentTarget.src = FALLBACK_LOGO;
                 }}
               />
             )}
           </div>
+
           <h1 className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">
             SchoolOS
           </h1>
+
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             {welcome}
           </p>
         </div>
 
+        {/* Login form */}
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-md transition-colors dark:border-slate-700 dark:bg-slate-800 sm:p-8">
           <h2 className="mb-1 text-lg font-semibold text-slate-900 dark:text-white">
             Welcome back
           </h2>
+
           <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
             Enter your credentials to continue.
           </p>
 
+          {/* Error message */}
           {error && (
             <div
               role="alert"
@@ -178,6 +201,7 @@ export function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Login ID */}
             <Input
               label="Login ID"
               name="login_id"
@@ -192,6 +216,7 @@ export function LoginPage() {
               autoFocus
             />
 
+            {/* Password */}
             <div className="w-full">
               <label
                 htmlFor="password"
@@ -200,6 +225,7 @@ export function LoginPage() {
                 Password
                 <span className="ml-0.5 text-red-500">*</span>
               </label>
+
               <div className="relative">
                 <input
                   id="password"
@@ -227,6 +253,7 @@ export function LoginPage() {
                     e.currentTarget.style.boxShadow = "";
                   }}
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
@@ -243,12 +270,13 @@ export function LoginPage() {
               </div>
             </div>
 
+            {/* Submit */}
             <Button
               type="submit"
               fullWidth
               size="lg"
               loading={submitting}
-              disabled={!loginId.trim() || !password}
+              disabled={!loginId.trim() || !password || submitting}
               style={{
                 backgroundColor: primary,
                 borderColor: primary,
@@ -259,6 +287,7 @@ export function LoginPage() {
             </Button>
           </form>
 
+          {/* Footer */}
           <div className="mt-6 text-center">
             <p className="text-xs text-slate-400 dark:text-slate-500">
               Powered by <span className="font-bold text-blue-500">IGSSAX</span>{" "}
